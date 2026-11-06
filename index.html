@@ -2,7 +2,11 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PE Tracking">
+<meta name="theme-color" content="#0b5fff">
 <title>PE Tracking</title>
 <style>
 :root{--bg:#f4f6f9;--card:#fff;--ink:#1c2430;--mute:#6b7685;--line:#e3e8ef;--brand:#0b5fff;--brand2:#e8f0ff;--good:#12a05c;--mid:#e6a100;--bad:#d64545;--shadow:0 1px 3px rgba(20,30,50,.08),0 4px 14px rgba(20,30,50,.05)}
@@ -63,7 +67,52 @@ a.lk{color:var(--brand);text-decoration:none;cursor:pointer}
 .sim{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer}.sim:hover{background:var(--brand2)}.sim .pc{font-weight:700;color:var(--brand);width:44px}
 .mt{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}.mt .card b{font-size:24px}.mt .d{font-size:12px}.up{color:var(--bad)}.dn{color:var(--good)}
 .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px;background:var(--card);padding:12px;border-radius:12px;box-shadow:var(--shadow)}
-@media(max-width:800px){#app{grid-template-columns:1fr}nav{position:static;height:auto;flex-direction:row;overflow:auto}.sp,.note{display:none}main{padding:14px}}
+html{-webkit-text-size-adjust:100%}
+.grid2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.mt{grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))}
+@media(max-width:800px){
+ body{font-size:15px;-webkit-tap-highlight-color:transparent}
+ #app{display:block}
+ nav{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:15;flex-direction:row;gap:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+ nav::-webkit-scrollbar{display:none}
+ .logo,.sp,.note{display:none}
+ nav a{flex:0 0 auto;flex-direction:column;gap:2px;padding:6px 12px;font-size:10.5px;min-width:68px;text-align:center;justify-content:center}
+ nav a span{font-size:19px;line-height:1}
+ main{padding:14px 14px calc(84px + env(safe-area-inset-bottom));padding-top:calc(14px + env(safe-area-inset-top))}
+ h1{font-size:19px}
+ .top{margin-bottom:12px}
+ .user select{display:none}
+ .cards{grid-template-columns:repeat(2,1fr);gap:10px}
+ .card{padding:13px}.kpi b{font-size:22px}
+ .grid2,.mt{gap:10px}
+ .bar em{width:92px}
+ .filters{gap:6px}.filters input{min-width:0;flex:1 1 100%}.filters select{min-width:0;flex:1 1 45%}
+ .filters .chip{flex:0 0 auto}
+ input,select,textarea,input[type=text],input[type=search],input[type=password]{font-size:16px!important}
+ select,input[type=text],input[type=search],textarea{padding:10px 12px}
+ .btn{padding:11px 16px}
+ .chip{padding:8px 13px;font-size:13px}
+ .seg a{padding:9px 14px}
+ .star{font-size:24px;padding:0 4px}
+ .tw{max-height:none;-webkit-overflow-scrolling:touch;border-radius:12px}
+ td{padding:11px 10px}th{padding:10px}
+ .nm{max-width:170px}
+ .drawer{width:100%;height:100dvh;box-shadow:none}
+ .dh{padding:calc(14px + env(safe-area-inset-top)) 14px 0}
+ .db{padding:14px 14px calc(20px + env(safe-area-inset-bottom))}
+ .x{font-size:30px;padding:0 6px;line-height:1}
+ .tabs a{padding:11px 14px}
+ .kv{grid-template-columns:repeat(2,1fr)}
+ .score{gap:12px}.ring{width:80px;height:80px}.ring div{width:60px;height:60px;font-size:20px}
+ .form{grid-template-columns:1fr}
+ .row{gap:6px}
+ .ft{font-size:12px}
+ .tabs{-webkit-overflow-scrolling:touch}
+ .cm .act{float:none;display:block;margin-bottom:4px}
+}
+
+.fbbar:empty{display:none}
+@media(max-width:800px){.fbbar{left:10px;right:10px!important;bottom:calc(74px + env(safe-area-inset-bottom))!important;font-size:13px!important}.fbbar input{width:100%!important;flex:1 1 100%;font-size:16px!important}.fbbar a.lk{padding:6px 4px}}
 </style>
 </head>
 <body>
@@ -423,7 +472,7 @@ render();
   const auth=firebase.auth(),ref=firebase.firestore().collection(FB_DOC[0]).doc(FB_DOC[1]);
   let ready=false,applying=false,timer=null;
   const bar=document.createElement('div');
-  bar.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;box-shadow:var(--shadow)';
+  bar.className='fbbar';bar.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;box-shadow:var(--shadow)';
   document.body.appendChild(bar);
   const st=(h)=>{bar.innerHTML=h};
   window.fbLogin=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>alert(e.message));
