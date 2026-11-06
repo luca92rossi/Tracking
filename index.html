@@ -95,7 +95,7 @@ const D=JSON.parse(document.getElementById('data').textContent);
 const C=D.companies,I=D.investors,invById={};I.forEach(i=>{if(i.id!=null)invById[i.id]=i});
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const KEY='pe_monitor_proto_v2',KEY1='pe_monitor_proto_v1';
-const DEF=()=>({users:Array.from({length:10},(_,i)=>i==0?'Tu':'Collega '+(i+1)),me:0,watch:{},comments:[],persons:[],rel:[],news:[],over:{},ap:{},fin:{},macro:{},research:[],msrc:{},mcust:{},nid:1,w:{hold:35,lev:20,grow:20,size:10,inv:15}});
+const DEF=()=>({users:['Tu'],me:0,watch:{},comments:[],persons:[],rel:[],news:[],over:{},ap:{},fin:{},macro:{},research:[],msrc:{},mcust:{},nid:1,w:{hold:35,lev:20,grow:20,size:10,inv:15}});
 let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S){try{const o=JSON.parse(localStorage.getItem(KEY1));if(o){S=o;S.persons=[];S.rel=[];S.nid=1;(o.contacts||[]).forEach(x=>{const n=(x.name||'').split(' ');S.persons.push({id:S.nid,first:n[0]||'',last:n.slice(1).join(' '),role:x.role||'',pe:'',co:x.c,info:x.info||''});S.rel.push({p:S.nid,u:x.u,conf:3,ts:x.ts});S.nid++});delete S.contacts}}catch(e){}}
 S=Object.assign(DEF(),S||{});
@@ -162,8 +162,8 @@ const coByName=n=>C.find(c=>c.name.toLowerCase()==(n||'').trim().toLowerCase());
 const NAV=[['dash','▦','Dashboard'],['comp','🏢','Aziende'],['inv','💼','Fondi PE'],['wl','★','Watchlist'],['pers','👤','Contatti'],['macro','📈','Macro & Industry'],['act','🕘','Attività team'],['set','⚙','Impostazioni']];
 function chrome(){
   $('#nav').innerHTML=`<div class="logo">PE <span>Monitor</span></div>`+NAV.map(([k,i,l])=>`<a class="${view==k?'on':''}" onclick="go('${k}')"><span>${i}</span>${l}</a>`).join('')+`<div class="sp"></div><div class="note">Prototipo con dati reali del file ${D.asof}. Commenti e watchlist sono salvati nel browser (in produzione: database condiviso).</div>`;
-  $('#usel').innerHTML=S.users.map((u,i)=>`<option value="${i}" ${i==S.me?'selected':''}>${esc(u)}</option>`).join('');
-  $('#av').textContent=S.users[S.me].slice(0,1).toUpperCase();
+  $('#usel').innerHTML=`<option>${esc(S.users[S.me]||'')}</option>`;$('#usel').disabled=true;
+  $('#av').textContent=(S.users[S.me]||'?').slice(0,1).toUpperCase();
   $('#title').textContent=NAV.find(n=>n[0]==view)[2];
 }
 $('#usel').onchange=e=>{S.me=+e.target.value;save();F.wl='me';render()};
@@ -323,7 +323,7 @@ function act(){const h=recent(60);$('#view').innerHTML=h?`<div style="max-width:
 /* ---------- settings ---------- */
 function set(){
   const W=S.w;
-  $('#view').innerHTML=`<div class="grid2"><div class="card"><h2>Utenti del team (max 10)</h2>${S.users.map((u,i)=>`<div class="row"><span class="av">${i+1}</span><input type="text" value="${esc(u)}" onchange="S.users[${i}]=this.value||'Utente ${i+1}';save();chrome()"></div>`).join('')}</div>
+  $('#view').innerHTML=`<div class="grid2"><div class="card"><h2>Utenti del team</h2><p class="sub">Gli utenti sono le persone che accedono con Firebase (email). Compaiono automaticamente al primo accesso.</p>${S.users.map((u,i)=>`<div class="row"><span class="av">${esc(u.slice(0,1).toUpperCase())}</span><span>${esc(u)}${i==S.me?' (tu)':''}</span></div>`).join('')}</div>
   <div class="card"><h2>Pesi dell'exit score</h2><p class="sub">Il punteggio (0-100) è una media pesata di 5 componenti. Modifica i pesi e tutto si ricalcola.</p>
   ${[['hold','Vintage / holding'],['lev','Leva'],['grow','Crescita'],['size','Dimensione'],['inv','Attività exit del fondo']].map(([k,l])=>`<div class="row"><span style="width:150px">${l}</span><input type="range" min="0" max="60" value="${W[k]}" oninput="S.w.${k}=+this.value;this.nextElementSibling.textContent=this.value;rescore();save()"><b>${W[k]}</b></div>`).join('')}
   <p class="sub">Vintage: massimo tra 5 e 8 anni di holding. Leva: ottimale ≤2x. Crescita: massimo ≥15% CAGR. Applicato a aziende con PE di maggioranza o minoranza.</p></div>
@@ -427,6 +427,9 @@ render();
   document.body.appendChild(bar);
   const st=(h)=>{bar.innerHTML=h};
   window.fbLogin=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>alert(e.message));
+  window.fbEmail=(create)=>{const e=document.getElementById('fbe').value.trim(),p=document.getElementById('fbp').value;
+    if(!e||!p){alert('Inserisci email e password (min. 6 caratteri)');return}
+    (create?auth.createUserWithEmailAndPassword(e,p):auth.signInWithEmailAndPassword(e,p)).catch(x=>alert(x.code+" "+x.message))};
   window.fbPush=()=>{
     if(!ready||applying)return;
     clearTimeout(timer);timer=setTimeout(()=>{
@@ -435,12 +438,15 @@ render();
     },600);
   };
   auth.onAuthStateChanged(u=>{
-    if(!u){ready=false;st('<a class="lk" onclick="fbLogin()">Accedi con Google per sincronizzare</a>');return}
+    if(!u){ready=false;st('<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input id="fbe" type="text" placeholder="email" style="width:150px"><input id="fbp" type="password" placeholder="password" style="width:110px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 10px"><a class="lk" onclick="fbEmail(0)">Accedi</a> · <a class="lk" onclick="fbEmail(1)">Crea utente</a> · <a class="lk" onclick="fbLogin()">Google</a></div>');return}
     if(FB_DOMAIN&&!(u.email||'').toLowerCase().endsWith('@'+FB_DOMAIN)){st('Account non autorizzato ('+u.email+') · <a class="lk" onclick="firebase.auth().signOut()">esci</a>');return}
+    const whoami=()=>{const em=(u.email||'').toLowerCase();let i=S.users.indexOf(em);
+      if(i<0){if(S.users.every(x=>x==='Tu'||/^Collega \d+$/.test(x))){S.users=[em];i=0}else{S.users.push(em);i=S.users.length-1}}
+      S.me=i;return i};
     ref.onSnapshot(s=>{
-      if(!s.exists){ready=true;fbPush();return}                 /* primo avvio: carica lo stato locale */
+      if(!s.exists){whoami();ready=true;fbPush();rescore();render();st('● sincronizzato · '+u.email+' · <a class="lk" onclick="firebase.auth().signOut()">esci</a>');return}                 /* primo avvio: carica lo stato locale */
       const r=JSON.parse(s.data().data),me=S.me;
-      applying=true;S=Object.assign(DEF(),r);S.me=me;applying=false;
+      applying=true;S=Object.assign(DEF(),r);S.me=me;const had=S.users.length;whoami();applying=false;if(!r.users||S.users.length!=r.users.length||S.users[S.me]!==(r.users||[])[S.me]){ready=true;fbPush()}
       try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
       ready=true;rescore();render();st('● sincronizzato · '+u.email+' · <a class="lk" onclick="firebase.auth().signOut()">esci</a>');
     },e=>(console.error(e),st('⚠ errore lettura: '+e.code+' – '+e.message)));
