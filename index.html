@@ -431,7 +431,7 @@ render();
     if(!ready||applying)return;
     clearTimeout(timer);timer=setTimeout(()=>{
       const d=JSON.parse(JSON.stringify(S));delete d.me;      /* "me" resta locale */
-      ref.set({data:JSON.stringify(d),by:auth.currentUser.email,ts:Date.now()}).then(()=>st('● sincronizzato '+new Date().toLocaleTimeString('it-IT'))).catch(e=>st('⚠ errore sync: '+e.code));
+      ref.set({data:JSON.stringify(d),by:auth.currentUser.email,ts:Date.now()}).then(()=>st('● sincronizzato '+new Date().toLocaleTimeString('it-IT'))).catch(e=>(console.error(e),st('⚠ errore salvataggio: '+e.code+' – '+e.message)));
     },600);
   };
   auth.onAuthStateChanged(u=>{
@@ -443,7 +443,7 @@ render();
       applying=true;S=Object.assign(DEF(),r);S.me=me;applying=false;
       try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
       ready=true;rescore();render();st('● sincronizzato · '+u.email+' · <a class="lk" onclick="firebase.auth().signOut()">esci</a>');
-    },e=>st('⚠ '+e.code));
+    },e=>(console.error(e),st('⚠ errore lettura: '+e.code+' – '+e.message)));
   });
 })();
 </script>
