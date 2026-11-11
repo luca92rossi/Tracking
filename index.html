@@ -364,7 +364,7 @@ function ptbl(){
   $('#ptb').innerHTML=r.map(({p,t,n})=>`<tr class="r" onclick="PX=PX==${p.id}?null:${p.id};ptbl()"><td class="nm">${esc(p.last)} ${esc(p.first)}</td><td>${esc(p.role||'–')}</td><td>${esc(p.pe||'–')}</td><td>${p.co!=null?esc(C[p.co].name):'–'}</td><td>${t?esc(S.users[t.u]):'–'}</td><td>${t?dots(t.conf):''}</td><td class="n">${n}</td></tr>`+(PX==p.id?`<tr><td colspan="7" style="background:var(--bg)">${persDet(p)}</td></tr>`:'')).join('')||'<tr><td colspan="7"><div class="empty">Nessun contatto. Usa “Nuovo contatto”.</div></td></tr>'}
 function editPers(id){PEDIT=id;ptbl()}
 function saveEditPers(id){const p=S.persons.find(x=>x.id==id);if(!p)return;const f=$('#ef').value.trim(),l=$('#el').value.trim();if(!f||!l)return alert('Nome e cognome obbligatori');
-  const pe=$('#ep').value.trim(),cn=$('#eco').value.trim(),co=cn?coByName(cn):null;if(cn&&!co)return alert('Azienda non trovata nel DB: scegli dall'elenco o lascia vuoto');
+  const pe=$('#ep').value.trim(),cn=$('#eco').value.trim(),co=cn?coByName(cn):null;if(cn&&!co)return alert('Azienda non trovata nel DB: scegli dall’elenco o lascia vuoto');
   const k0=pkey(p.first,p.last,p.pe),k1=pkey(f,l,pe);
   if(k0!=k1&&S.persons.some(x=>x.id!=id&&pkey(x.first,x.last,x.pe)==k1))return alert('Esiste già un contatto con stesso nome, cognome e PE');
   if(k0!=k1){tomb('p',k0);S.rel.filter(x=>x.p==id).forEach(x=>tomb('l',k0+'|'+S.users[x.u]))}
