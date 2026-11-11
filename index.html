@@ -113,9 +113,8 @@ html{-webkit-text-size-adjust:100%}
  .cm .act{float:none;display:block;margin-bottom:4px}
 }
 
-#syncbar{position:fixed;right:12px;bottom:10px;z-index:5;font-size:11px;color:var(--mute);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px;box-shadow:var(--shadow);max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#syncbar:empty{display:none}
-@media(max-width:800px){#syncbar{bottom:calc(74px + env(safe-area-inset-bottom));right:8px}}
+.fbbar:empty{display:none}
+@media(max-width:800px){.fbbar{left:10px;right:10px!important;bottom:calc(74px + env(safe-area-inset-bottom))!important;font-size:13px!important}.fbbar input{width:100%!important;flex:1 1 100%;font-size:16px!important}.fbbar a.lk{padding:6px 4px}}
 </style>
 </head>
 <body>
@@ -125,7 +124,22 @@ html{-webkit-text-size-adjust:100%}
 </div>
 <div class="mask" id="mask"></div>
 <aside class="drawer" id="drawer"></aside>
-<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ===== FIREBASE: incolla qui la tua configurazione (Project settings > Your apps > Web app) ===== */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyBV0JwKAhRaFZgcRgWijDFI7ExpUgOserk",
+  authDomain:"pe-tracking.firebaseapp.com",
+  projectId:"pe-tracking",
+  storageBucket:"pe-tracking.firebasestorage.app",
+  messagingSenderId:"12721176514",
+  appId:"1:12721176514:web:f923dbf4f54f8e0cf6205b"
+};
+const FB_DOC=['pe_tracking','state'];      /* collection / documento condiviso */
+const FB_DOMAIN=''; /* vuoto '' per non limitare il dominio */
+</script>
 <script src="data/news.js"></script>
 <script src="data/industry.js"></script>
 <script src="data/macro.js"></script>
@@ -157,7 +171,7 @@ let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S){try{const o=JSON.parse(localStorage.getItem(KEY1));if(o){S=o;S.persons=[];S.rel=[];S.nid=1;(o.contacts||[]).forEach(x=>{const n=(x.name||'').split(' ');S.persons.push({id:S.nid,first:n[0]||'',last:n.slice(1).join(' '),role:x.role||'',pe:'',co:x.c,info:x.info||''});S.rel.push({p:S.nid,u:x.u,conf:3,ts:x.ts});S.nid++});delete S.contacts}}catch(e){}}
 S=Object.assign(DEF(),S||{});if(S.dbv!==D.dbv){const k=S;S=Object.assign(DEF(),{users:k.users,me:k.me,w:k.w,macro:k.macro,research:k.research,msrc:k.msrc,mcust:k.mcust,nid:k.nid});S.dbv=D.dbv}
 const tomb=(t,id)=>{(S.tomb=S.tomb||{})[t+':'+id]=Date.now()};
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{window.syncPush&&syncPush()}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{window.fbPush&&fbPush()}catch(e){}};
 let view='dash',F={q:'',sector:'',sub:'',subInd:'',vert:'',own:'',inv:'',min:'',smin:0,smax:100,ap:'',wl:'me'},sort={k:'score',d:-1},tab='ov',open=null;
 /* ---------- helpers ---------- */
 const n1=(v,d=1)=>v==null?'–':Number(v).toLocaleString('it-IT',{maximumFractionDigits:d,minimumFractionDigits:d});
@@ -415,17 +429,12 @@ function act(){const h=recent(60);$('#view').innerHTML=h?`<div style="max-width:
 /* ---------- settings ---------- */
 function set(){
   const W=S.w;
-  $('#view').innerHTML=`<div class="grid2"><div class="card"><h2>Utenti del team</h2><p class="sub">Dati salvati solo in questo browser.</p>${S.users.map((u,i)=>`<div class="row"><span class="av">${esc(u.slice(0,1).toUpperCase())}</span><span>${esc(u)}${i==S.me?' (tu)':''}</span></div>`).join('')}</div>
+  $('#view').innerHTML=`<div class="grid2"><div class="card"><h2>Utenti del team</h2><p class="sub">Gli utenti sono le persone che accedono con Firebase (email). Compaiono automaticamente al primo accesso.</p>${S.users.map((u,i)=>`<div class="row"><span class="av">${esc(u.slice(0,1).toUpperCase())}</span><span>${esc(u)}${i==S.me?' (tu)':''}</span></div>`).join('')}</div>
   <div class="card"><h2>Pesi dell'exit score</h2><p class="sub">Il punteggio (0-100) è una media pesata di 5 componenti. Modifica i pesi e tutto si ricalcola.</p>
   ${[['hold','Vintage / holding'],['lev','Leva'],['grow','Crescita'],['size','Dimensione'],['inv','Attività exit del fondo']].map(([k,l])=>`<div class="row"><span style="width:150px">${l}</span><input type="range" min="0" max="60" value="${W[k]}" oninput="S.w.${k}=+this.value;S.wts=Date.now();this.nextElementSibling.textContent=this.value;rescore();save()"><b>${W[k]}</b></div>`).join('')}
   <p class="sub">Vintage: massimo tra 5 e 8 anni di holding. Leva: ottimale ≤2x. Crescita: massimo ≥15% CAGR. Applicato a aziende con PE di maggioranza o minoranza.</p></div>
   <div class="card" style="grid-column:1/-1"><h2>Fonti dati macro</h2><p class="sub">Scegli da quale fonte aggiornare ogni indicatore. Nella pagina Macro & Industry compaiono i link “fonte” e “scarica” della fonte scelta (CSV/Excel quando la fonte lo offre). “Personalizzata” permette di incollare un tuo link.</p>
   <table class="ft"><thead><tr><th>Indicatore</th><th>Fonte</th><th>Collegamenti</th></tr></thead><tbody>${MAC.map(([g,id,l])=>{const L=MSRC[id]||[],cur=S.msrc[id]??0,x=msel(id);return `<tr><td class="l">${l}<div class="sub">${g}</div></td><td><select onchange="S.msrc['${id}']=this.value=='c'?'c':+this.value;save();set()">${L.map((o,i)=>`<option value="${i}" ${cur===i?'selected':''}>${esc(o.n)}</option>`).join('')}<option value="c" ${cur==='c'?'selected':''}>Personalizzata…</option></select>${cur==='c'?`<br><input type="text" style="width:100%;margin-top:4px" placeholder="https://…" value="${esc(S.mcust[id]||'')}" onchange="S.mcust['${id}']=this.value.trim();save();set()">`:''}</td><td>${x?`<a class="lk" href="${esc(x.p)}" target="_blank" rel="noopener">Apri pagina</a>${x.d?` · <a class="lk" href="${esc(x.d)}" target="_blank" rel="noopener">Scarica ${x.t||''}</a>`:''}`:'–'}</td></tr>`}).join('')}</tbody></table></div>
-  <div class="card"><h2>Sincronizzazione del team</h2><p class="sub">Commenti, contatti, watchlist e modifiche vengono salvati nel repository GitHub del team a ogni salvataggio e uniti ai dati dei colleghi.</p>
-  ${SYNC.az?`<div class="row"><span>Accesso come <b>${esc(SYNC.name||'…')}</b> (account Microsoft)</span></div><div class="row"><button class="btn" onclick="syncNow()">Sincronizza ora</button><span class="sub" id="syncst">${esc(SYNC.msg||'')}</span></div>`:SYNC.url?`<div class="row"><span style="width:110px">Il tuo nome</span><input type="text" id="sn" value="${esc(SYNC.name)}" placeholder="Nome Cognome" style="flex:1"></div>
-  <div class="row"><span style="width:110px">Codice team</span><input type="password" id="sk" value="${esc(SYNC.key)}" placeholder="Fornito dall'amministratore" style="flex:1"></div>
-  <div class="row"><button class="btn" onclick="syncSave()">Salva e sincronizza</button><span class="sub" id="syncst">${esc(SYNC.msg||'')}</span></div>`
-  :`<div class="empty">Sincronizzazione non configurata: imposta l'indirizzo del servizio in config.js (vedi README).</div>`}</div>
   <div class="card"><h2>Dati del team</h2><p class="sub">Esporta/importa commenti, contatti, watchlist per condividerli (in produzione sarà automatico via database).</p>
   <button class="btn g" onclick="exp()">Esporta JSON</button> <button class="btn g" onclick="document.getElementById('imp').click()">Importa JSON</button><input id="imp" type="file" accept=".json" hidden onchange="imp(this)"> <button class="btn g" style="color:var(--bad)" onclick="if(confirm('Cancellare tutti i dati inseriti?')){localStorage.removeItem(KEY);location.reload()}">Azzera tutto</button></div></div>`}
 function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='pe_monitor_dati_team.json';a.click()}
@@ -516,102 +525,42 @@ function nwT(c){
 const addN=id=>{const t=$('#nt').value.trim();if(!t)return;S.news.push({id:Date.now(),c:id,u:S.me,ts:Date.now(),title:t,url:$('#nu').value.trim().replace(/^(?!https?:\/\/)(.+)/,'https://$1')});save();drawer()};
 render();
 
-/* ---------- Sincronizzazione team via Worker -> GitHub (data/team.json) ---------- */
-const SYNC={url:(window.SYNC_URL||'').replace(/\/$/,''),az:window.SYNC_AUTH==='azure',key:'',name:'',busy:false,again:false,timer:null,msg:''};
-const syncReady=()=>!!(SYNC.url&&SYNC.name&&(SYNC.az||SYNC.key));
-try{SYNC.key=localStorage.getItem('pe_sync_key')||'';SYNC.name=localStorage.getItem('pe_sync_name')||''}catch(e){}
-const SHARED=['users','watch','comments','persons','rel','news','over','ap','fin','macro','research','msrc','mcust','nid','w','wts','tomb','dbv'];
-const cl=o=>JSON.parse(JSON.stringify(o));
-function mergeState(R,L,meL){
-  L=cl(L);
-  if(!R)return L;
-  R=cl(R);
-  if(R.dbv!==D.dbv){R=Object.assign(DEF(),{users:R.users,w:R.w,wts:R.wts,macro:R.macro,research:R.research,msrc:R.msrc,mcust:R.mcust,nid:R.nid,tomb:R.tomb,dbv:D.dbv})}
-  const out={};
-  const U=[...(R.users||[])];(L.users||[]).forEach(n=>{if(!U.includes(n))U.push(n)});out.users=U;
-  const mp=i=>{const n=(L.users||[])[i];const k=U.indexOf(n);return k<0?i:k};
-  const T=Object.assign({},R.tomb||{},L.tomb||{});out.tomb=T;
-  // commenti / notizie / ricerche: unione per id
-  const uni=(a,b,t)=>{const m=new Map();(a||[]).forEach(x=>m.set(x.id,x));(b||[]).forEach(x=>{x.u=mp(x.u);if(!m.has(x.id))m.set(x.id,x)});return [...m.values()].filter(x=>!(t&&T[t+':'+x.id]))};
-  out.comments=uni(R.comments,L.comments,'c');out.news=uni(R.news,L.news,null);out.research=uni(R.research,L.research,'r');
-  // contatti: chiave = nome|cognome|fondo, id canonico = quello remoto
-  const pk=p=>pkey(p.first,p.last,p.pe);
-  const P=[...(R.persons||[])];let nid=Math.max(R.nid||1,L.nid||1,...P.map(p=>p.id+1),1);const idMap={};
-  (L.persons||[]).forEach(p=>{const ex=P.find(q=>pk(q)==pk(p));if(ex){idMap[p.id]=ex.id;if(!ex.role&&p.role)ex.role=p.role;if(!ex.info&&p.info)ex.info=p.info;if(ex.co==null&&p.co!=null)ex.co=p.co}else{const id=P.some(q=>q.id==p.id)?nid++:p.id;idMap[p.id]=id;P.push(Object.assign({},p,{id}))}});
-  out.persons=P.filter(p=>!T['p:'+pk(p)]);const idPk={};P.forEach(p=>idPk[p.id]=pk(p));
-  out.nid=Math.max(nid,...P.map(p=>p.id+1));
-  const rm=new Map();(R.rel||[]).forEach(r=>rm.set(r.p+'|'+r.u,r));
-  (L.rel||[]).forEach(r=>{const n=Object.assign({},r,{p:idMap[r.p]??r.p,u:mp(r.u)});const k=n.p+'|'+n.u,e=rm.get(k);if(!e||(n.ts||0)>(e.ts||0))rm.set(k,n)});
-  out.rel=[...rm.values()].filter(r=>{const pk_=idPk[r.p];if(!pk_)return false;const t=T['l:'+pk_+'|'+U[r.u]];return !(t&&t>=(r.ts||0))});
-  // AP / override: vince il piu' recente, salvo cancellazione piu' recente
-  const nw=(a,b,t)=>{const o={},ids=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);ids.forEach(id=>{const x=(a||{})[id],y=(b||{})[id];if(y)y.u=mp(y.u);const w=!x?y:!y?x:((y.ts||0)>=(x.ts||0)?y:x);const d=T[t+':'+id];if(w&&!(d&&d>=(w.ts||0)))o[id]=w});return o};
-  out.ap=nw(R.ap,L.ap,'a');out.over=nw(R.over,L.over,'o');
-  out.fin={};new Set([...Object.keys(R.fin||{}),...Object.keys(L.fin||{})]).forEach(id=>{out.fin[id]=Object.assign({},(R.fin||{})[id],(L.fin||{})[id])});
-  out.macro={};new Set([...Object.keys(R.macro||{}),...Object.keys(L.macro||{})]).forEach(id=>{const m=new Map();(R.macro||{})[id]&&R.macro[id].forEach(x=>m.set(x.d+'|'+x.u+'|'+x.v,x));(L.macro||{})[id]&&L.macro[id].forEach(x=>{x.u=x.u>=0?mp(x.u):x.u;m.set(x.d+'|'+x.u+'|'+x.v,x)});out.macro[id]=[...m.values()].sort((a,b)=>a.d.localeCompare(b.d))});
-  // watchlist: ognuno e' autore della propria
-  out.watch=Object.assign({},R.watch||{});const meF=U.indexOf((L.users||[])[meL]);if(meF>=0)out.watch[meF]=(L.watch||{})[meL]||[];
-  out.msrc=Object.assign({},R.msrc,L.msrc);out.mcust=Object.assign({},R.mcust,L.mcust);
-  out.w=(L.wts||0)>(R.wts||0)?L.w:R.w;out.wts=Math.max(L.wts||0,R.wts||0);out.dbv=D.dbv;
-  const o={};SHARED.forEach(k=>o[k]=out[k]);return o;
-}
-function ensureMe(){
-  if(!SYNC.name)return;
-  if(S.users.length==1&&(S.users[0]==='Tu'||/^Collega \d+$/.test(S.users[0])))S.users=[SYNC.name];
-  else if(!S.users.includes(SYNC.name))S.users.push(SYNC.name);
-  S.me=S.users.indexOf(SYNC.name);
-}
-const sharedOf=()=>{const d={};SHARED.forEach(k=>d[k]=S[k]);return d};
-async function syncApi(method,body){
-  const r=await fetch(SYNC.url+'/state',{method,headers:Object.assign({'Content-Type':'application/json'},SYNC.az?{}:{'X-Team-Key':SYNC.key}),body:body?JSON.stringify(body):undefined});
-  let j={};try{j=await r.json()}catch(e){}return{status:r.status,j};
-}
-function syncMsg(m){SYNC.msg=m;const b=document.getElementById('syncbar');if(b)b.textContent=m;const e=document.getElementById('syncst');if(e)e.textContent=m}
-async function syncNow(){
-  if(!syncReady())return;
-  if(SYNC.busy){SYNC.again=true;return}
-  SYNC.busy=true;
-  try{
-    ensureMe();
-    for(let i=0;i<4;i++){
-      const g=await syncApi('GET');
-      if(g.status===401||g.status===403){syncMsg(SYNC.az?'⚠ accesso non autorizzato o scaduto: ricarica la pagina':'⚠ codice team non valido');return}
-      if(g.status!==200)throw new Error(g.j.error||g.status);
-      const R=g.j.data?JSON.parse(g.j.data):null;
-      const merged=mergeState(R,Object.assign(sharedOf()),S.me);
-      const same=R&&JSON.stringify(merged)===JSON.stringify(Object.assign({},...SHARED.map(k=>({[k]:R[k]}))));
-      const me=merged.users.indexOf(SYNC.name);
-      S=Object.assign(DEF(),merged);S.me=me;
+/* ---------- Firebase sync (Firestore + Google sign-in) ---------- */
+(function(){
+  if(typeof firebase==='undefined'||FIREBASE_CONFIG.apiKey==='INCOLLA_QUI'){console.warn('Firebase non configurato: modalità solo locale');return}
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const auth=firebase.auth(),ref=firebase.firestore().collection(FB_DOC[0]).doc(FB_DOC[1]);
+  let ready=false,applying=false,timer=null;
+  const bar=document.createElement('div');
+  bar.className='fbbar';bar.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;box-shadow:var(--shadow)';
+  document.body.appendChild(bar);
+  const st=(h)=>{bar.innerHTML=h};
+  window.fbLogin=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>alert(e.message));
+  window.fbEmail=(create)=>{const e=document.getElementById('fbe').value.trim(),p=document.getElementById('fbp').value;
+    if(!e||!p){alert('Inserisci email e password (min. 6 caratteri)');return}
+    (create?auth.createUserWithEmailAndPassword(e,p):auth.signInWithEmailAndPassword(e,p)).catch(x=>alert(x.code+" "+x.message))};
+  window.fbPush=()=>{
+    if(!ready||applying)return;
+    clearTimeout(timer);timer=setTimeout(()=>{
+      const d=JSON.parse(JSON.stringify(S));delete d.me;      /* "me" resta locale */
+      ref.set({data:JSON.stringify(d),by:auth.currentUser.email,ts:Date.now()}).then(()=>st('● sincronizzato '+new Date().toLocaleTimeString('it-IT'))).catch(e=>(console.error(e),st('⚠ errore salvataggio: '+e.code+' – '+e.message)));
+    },600);
+  };
+  auth.onAuthStateChanged(u=>{
+    if(!u){ready=false;st('<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input id="fbe" type="text" placeholder="email" style="width:150px"><input id="fbp" type="password" placeholder="password" style="width:110px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 10px"><a class="lk" onclick="fbEmail(0)">Accedi</a> · <a class="lk" onclick="fbEmail(1)">Crea utente</a> · <a class="lk" onclick="fbLogin()">Google</a></div>');return}
+    if(FB_DOMAIN&&!(u.email||'').toLowerCase().endsWith('@'+FB_DOMAIN)){st('Account non autorizzato ('+u.email+') · <a class="lk" onclick="firebase.auth().signOut()">esci</a>');return}
+    const whoami=()=>{const em=(u.email||'').toLowerCase();let i=S.users.indexOf(em);
+      if(i<0){if(S.users.every(x=>x==='Tu'||/^Collega \d+$/.test(x))){S.users=[em];i=0}else{S.users.push(em);i=S.users.length-1}}
+      S.me=i;return i};
+    ref.onSnapshot(s=>{
+      if(!s.exists){whoami();ready=true;fbPush();rescore();render();st('● sincronizzato · '+u.email+' · <a class="lk" onclick="firebase.auth().signOut()">esci</a>');return}                 /* primo avvio: carica lo stato locale */
+      const r=JSON.parse(s.data().data),me=S.me;
+      applying=true;S=Object.assign(DEF(),r);if(S.dbv!==D.dbv){S=Object.assign(DEF(),{users:r.users,w:r.w,macro:r.macro,research:r.research,msrc:r.msrc,mcust:r.mcust,nid:r.nid});S.dbv=D.dbv}S.me=me;const had=S.users.length;whoami();applying=false;if(!r.users||S.users.length!=r.users.length||S.users[S.me]!==(r.users||[])[S.me]){ready=true;fbPush()}
       try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
-      if(same){break}
-      const p=await syncApi('PUT',{data:JSON.stringify(merged),sha:g.j.sha,by:SYNC.name});
-      if(p.status===200)break;
-      if(p.status!==409)throw new Error(p.j.error||p.status);
-    }
-    rescore();
-    if(!document.querySelector('textarea:focus,input:focus'))render();
-    syncMsg('● sincronizzato '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}));
-  }catch(e){console.error(e);syncMsg('⚠ sincronizzazione non riuscita ('+(e.message||e)+'), riprovo al prossimo salvataggio')}
-  finally{SYNC.busy=false;if(SYNC.again){SYNC.again=false;setTimeout(syncNow,300)}}
-}
-window.syncPush=()=>{if(!syncReady())return;clearTimeout(SYNC.timer);SYNC.timer=setTimeout(syncNow,800)};
-function syncSave(){
-  SYNC.name=($('#sn').value||'').trim();SYNC.key=$('#sk').value||'';
-  if(!SYNC.name||!SYNC.key)return alert('Inserisci nome e codice team');
-  try{localStorage.setItem('pe_sync_name',SYNC.name);localStorage.setItem('pe_sync_key',SYNC.key)}catch(e){}
-  syncMsg('sincronizzazione in corso…');syncNow();
-}
-if(SYNC.url&&location.protocol!=='file:'){
-  const bar=document.createElement('div');bar.id='syncbar';document.body.appendChild(bar);
-  if(SYNC.az){
-    bar.textContent='accesso in corso…';
-    fetch('/.auth/me').then(r=>r.json()).then(j=>{const u=j&&j.clientPrincipal;if(!u){bar.textContent='⚠ non autenticato';return}SYNC.name=u.userDetails||'utente';bar.textContent='sincronizzazione…';syncNow()}).catch(()=>{bar.textContent='⚠ accesso non disponibile'});
-  }
-  else if(!SYNC.name||!SYNC.key){bar.textContent='Sincronizzazione: inserisci nome e codice in Impostazioni'}
-  else{bar.textContent='sincronizzazione…';setTimeout(syncNow,400)}
-  setInterval(()=>{if(!document.hidden&&!document.querySelector('textarea:focus,input:focus'))syncNow()},90000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
-}
-
+      ready=true;rescore();render();st('● sincronizzato · '+u.email+' · <a class="lk" onclick="firebase.auth().signOut()">esci</a>');
+    },e=>(console.error(e),st('⚠ errore lettura: '+e.code+' – '+e.message)));
+  });
+})();
 </script>
 </body>
 </html>
