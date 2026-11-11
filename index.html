@@ -332,7 +332,7 @@ function wlv(){
   $('#wsel').onchange=e=>{F.wl=e.target.value==S.me?'me':e.target.value;wlv()}}
 
 /* ---------- persons view ---------- */
-let PF={q:'',pe:'',min:0,mine:false},PX=null,PADD=false;
+let PF={q:'',pe:'',min:0,mine:false},PX=null,PADD=false,PEDIT=null;
 function persV(){
   const pes=[...new Set(S.persons.map(p=>p.pe).filter(Boolean))].sort();
   $('#view').innerHTML=`<datalist id="pel">${I.map(i=>`<option value="${esc(i.name)}">`).join('')}</datalist><datalist id="col">${C.map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist>
@@ -348,11 +348,19 @@ function ptbl(){
   const q=PF.q.toLowerCase();
   const r=S.persons.map(p=>({p,t:topRel(p.id),n:relsOf(p.id).length,mine:S.rel.find(x=>x.p==p.id&&x.u==S.me)})).filter(({p,t,mine})=>(!q||(p.first+' '+p.last+' '+p.role+' '+p.pe).toLowerCase().includes(q))&&tm(p.pe,PF.pe)&&(t?t.conf:0)>=PF.min&&(!PF.mine||mine)).sort((a,b)=>(b.t?.conf||0)-(a.t?.conf||0)||a.p.last.localeCompare(b.p.last));
   $('#ptb').innerHTML=r.map(({p,t,n})=>`<tr class="r" onclick="PX=PX==${p.id}?null:${p.id};ptbl()"><td class="nm">${esc(p.last)} ${esc(p.first)}</td><td>${esc(p.role||'–')}</td><td>${esc(p.pe||'–')}</td><td>${p.co!=null?esc(C[p.co].name):'–'}</td><td>${t?esc(S.users[t.u]):'–'}</td><td>${t?dots(t.conf):''}</td><td class="n">${n}</td></tr>`+(PX==p.id?`<tr><td colspan="7" style="background:var(--bg)">${persDet(p)}</td></tr>`:'')).join('')||'<tr><td colspan="7"><div class="empty">Nessun contatto. Usa “Nuovo contatto”.</div></td></tr>'}
+function editPers(id){PEDIT=id;ptbl()}
+function saveEditPers(id){const p=S.persons.find(x=>x.id==id);if(!p)return;const f=$('#ef').value.trim(),l=$('#el').value.trim();if(!f||!l)return alert('Nome e cognome obbligatori');
+  const pe=$('#ep').value.trim(),cn=$('#eco').value.trim(),co=cn?coByName(cn):null;if(cn&&!co)return alert('Azienda non trovata nel DB: scegli dall'elenco o lascia vuoto');
+  const k0=pkey(p.first,p.last,p.pe),k1=pkey(f,l,pe);
+  if(k0!=k1&&S.persons.some(x=>x.id!=id&&pkey(x.first,x.last,x.pe)==k1))return alert('Esiste già un contatto con stesso nome, cognome e PE');
+  if(k0!=k1){tomb('p',k0);S.rel.filter(x=>x.p==id).forEach(x=>tomb('l',k0+'|'+S.users[x.u]))}
+  Object.assign(p,{first:f,last:l,role:$('#er').value.trim(),pe,co:co?co.id:null,info:$('#ei').value.trim()});PEDIT=null;save();ptbl()}
 function persDet(p){const R=relsOf(p.id).sort((a,b)=>b.conf-a.conf);const mine=R.find(r=>r.u==S.me);
+  if(PEDIT==p.id)return `<div class="form" style="padding:8px 4px"><input type="text" id="ef" placeholder="Nome" value="${esc(p.first)}"><input type="text" id="el" placeholder="Cognome" value="${esc(p.last)}"><input type="text" id="er" placeholder="Ruolo" value="${esc(p.role||'')}"><input type="text" id="ep" list="pel" placeholder="PE / fondo" value="${esc(p.pe||'')}"><input type="text" id="eco" list="col" placeholder="Azienda (opz.)" value="${p.co!=null&&C[p.co]?esc(C[p.co].name):''}"><input type="text" id="ei" placeholder="Email / telefono (opz.)" value="${esc(p.info||'')}"><button class="btn" onclick="saveEditPers(${p.id})">Salva modifiche</button><button class="btn g" onclick="PEDIT=null;ptbl()">Annulla</button></div>`;
   return `<div style="padding:6px 4px;white-space:normal"><b>Chi lo conosce e con che livello</b> ${p.info?`<span class="sub"> · ${esc(p.info)}</span>`:''}
   ${R.map((r,i)=>`<div class="row"><span style="width:130px">${esc(S.users[r.u])}${i==0?' ★':''}</span>${dots(r.conf)} <span class="sub">${CL[r.conf]}</span></div>`).join('')}
   <div class="row"><span>La tua confidenza:</span><select onchange="setConf(${p.id},+this.value)"><option value="0">${mine?'rimuovi':'non lo conosco'}</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${mine&&mine.conf==n?'selected':''}>${n} – ${CL[n]}</option>`).join('')}</select>
-  <a class="lk" onclick="if(confirm('Eliminare il contatto per tutti?')){{const q=S.persons.find(x=>x.id==${p.id});if(q)tomb('p',pkey(q.first,q.last,q.pe))}S.persons=S.persons.filter(x=>x.id!=${p.id});S.rel=S.rel.filter(x=>x.p!=${p.id});save();ptbl()}">elimina contatto</a></div></div>`}
+  <a class="lk" onclick="editPers(${p.id})">modifica contatto</a> <a class="lk" onclick="if(confirm('Eliminare il contatto per tutti?')){{const q=S.persons.find(x=>x.id==${p.id});if(q)tomb('p',pkey(q.first,q.last,q.pe))}S.persons=S.persons.filter(x=>x.id!=${p.id});S.rel=S.rel.filter(x=>x.p!=${p.id});save();ptbl()}">elimina contatto</a></div></div>`}
 function setConf(pid,v){if(!v){const q=S.persons.find(x=>x.id==pid);if(q)tomb('l',pkey(q.first,q.last,q.pe)+'|'+S.users[S.me])}S.rel=S.rel.filter(x=>!(x.p==pid&&x.u==S.me));if(v)S.rel.push({p:pid,u:S.me,conf:v,ts:Date.now()});save();ptbl()}
 /* ---------- macro ---------- */
 const MAC=[
