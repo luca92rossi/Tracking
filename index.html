@@ -115,6 +115,49 @@ html{-webkit-text-size-adjust:100%}
 
 .fbbar:empty{display:none}
 @media(max-width:800px){.fbbar{left:10px;right:10px!important;bottom:calc(74px + env(safe-area-inset-bottom))!important;font-size:13px!important}.fbbar input{width:100%!important;flex:1 1 100%;font-size:16px!important}.fbbar a.lk{padding:6px 4px}}
+@media(max-width:800px){
+ .filters{gap:8px}
+ .fg{grid-template-columns:1fr 1fr}
+ .fgi,.fgp{grid-template-columns:1fr 1fr}
+ .fgi>input[type=search],.fgp>input[type=search],.filters .fr:first-child input{grid-column:1/-1;max-width:none;height:42px}
+ .fgi>.chip,.fgp>.chip,.fg>.fc{justify-self:start}
+ .fg>.fc{grid-column:1/-1}
+ .fgp>.btn{grid-column:1/-1;justify-self:stretch}
+ .ft{height:42px;padding:8px 30px 8px 10px;font-size:16px!important}
+ .cbx{width:30px;height:40px;line-height:36px;font-size:18px}
+ .cbl{max-height:50vh;top:44px;-webkit-overflow-scrolling:touch}
+ .cbo{font-size:15px;padding:11px 12px;white-space:normal}
+ .dual{display:flex;width:100%;justify-content:space-between}.dr{flex:1;max-width:none}.dr input::-webkit-slider-thumb{width:24px;height:24px;margin-top:-10px}.dr input{height:24px}.dr{height:24px}
+ .tw table{font-size:13px}
+ #syncbar,.fbbar{max-width:92vw}
+}
+.fbtn{display:none}
+@media(max-width:800px){
+ .fbtn{display:inline-flex;align-items:center;gap:4px;font-weight:600;color:var(--brand);border-color:var(--brand);white-space:nowrap}
+ .filters:not(.open) > .fg,.filters:not(.open) > .fr:not(:first-child){display:none}
+ .filters:not(.open) .fgi > *:not(:first-child):not(.fbtn),.filters:not(.open) .fgp > *:not(:first-child):not(.fbtn):not(.btn){display:none}
+ .filters .fr:first-child{flex-wrap:nowrap}.filters .fr:first-child input{flex:1 1 auto}
+ .fgi>.fbtn,.fgp>.fbtn{grid-column:1/-1;justify-self:stretch;justify-content:center;padding:10px}
+ #view .tw{overflow:visible;background:none;box-shadow:none;border-radius:0}
+ #view .tw table,#view .tw tbody{display:block;width:100%;min-width:0}
+ #view .tw thead{display:none}
+ #view .tw tr{display:block;position:relative;background:var(--card);border-radius:12px;box-shadow:var(--shadow);margin:0 0 10px;padding:10px 12px}
+ #view .tw td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 0;border:0;text-align:right;max-width:none}
+ #view .tw td::before{content:attr(data-label);color:var(--mute);font-size:12px;text-align:left;flex:0 0 auto}
+ #view .tw td[colspan]{display:block;text-align:left}#view .tw td[colspan]::before{display:none}
+ #view .tw td.nm{display:block;text-align:left;font-size:16px;font-weight:600;padding-right:34px}#view .tw td.nm::before{display:none}
+ #view .tw td:has(>div.nm){display:block;text-align:left;padding-right:34px}#view .tw td:has(>div.nm)::before{display:none}
+ #view .tw td:has(>.star){position:absolute;right:8px;top:6px;padding:0;display:block}#view .tw td:has(>.star)::before{display:none}
+ #view .tw td .sub{text-align:inherit}
+ #view .tw td:empty{display:none}
+}
+@media(max-width:800px){
+ #view .tw tr.r{display:grid;grid-template-columns:1fr 1fr;column-gap:16px}
+ #view .tw tr.r>td.nm,#view .tw tr.r>td:has(>div.nm),#view .tw tr.r>td[data-label="Settore"],#view .tw tr.r>td[data-label="Flagship"],#view .tw tr.r>td[data-label="Fondo"]:not(.nm){grid-column:1/-1}
+ #view .tw td[data-label="Settore"]{display:block;text-align:left;padding:2px 0 4px}#view .tw td[data-label="Settore"]::before{display:none}
+ #view .tw td[data-label="Settore"] .sub{white-space:normal}
+ #view .tw tr.r>td:has(>.star){grid-column:auto}
+}
 </style>
 </head>
 <body>
@@ -174,6 +217,8 @@ if(!S){try{const o=JSON.parse(localStorage.getItem(KEY1));if(o){S=o;S.persons=[]
 S=Object.assign(DEF(),S||{});if(S.dbv!==D.dbv){const k=S;S=Object.assign(DEF(),{users:k.users,me:k.me,w:k.w,macro:k.macro,research:k.research,msrc:k.msrc,mcust:k.mcust,nid:k.nid});S.dbv=D.dbv}
 const tomb=(t,id)=>{(S.tomb=S.tomb||{})[t+':'+id]=Date.now()};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{window.fbPush&&fbPush()}catch(e){}};
+let FOPEN=false;
+function mobLab(){document.querySelectorAll('#view .tw table').forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent.replace(/[▲▼]/g,'').trim());t.querySelectorAll('tbody tr').forEach(r=>[...r.children].forEach((td,i)=>{if(h[i]&&!td.hasAttribute('colspan'))td.setAttribute('data-label',h[i])}))})}
 let view='dash',F={q:'',sector:'',sub:'',subInd:'',vert:'',own:'',inv:'',min:'',smin:0,smax:100,ap:'',wl:'me'},sort={k:'score',d:-1},tab='ov',open=null;
 /* ---------- helpers ---------- */
 const n1=(v,d=1)=>v==null?'–':Number(v).toLocaleString('it-IT',{maximumFractionDigits:d,minimumFractionDigits:d});
@@ -287,7 +332,7 @@ const srt=k=>{sort.d=sort.k==k?-sort.d:(['name','sector','own','maj'].includes(k
 function refOpts(){[['fs','sector','Settore: tutti'],['fsub','sub','Sottosettore: tutti'],['fsi','subInd','Sub-industry: tutte'],['fv','vert','Vertical: tutti']].forEach(([id,k,l])=>{const el=$('#'+id);if(el)el.innerHTML=`<option value="">${l}</option>`+uniqH(k).map(x=>`<option ${x==F[k]?'selected':''}>${esc(x)}</option>`).join('')})}
 function comp(){
   const opt=(a,v)=>`<option value="">Tutti</option>`+a.map(x=>`<option ${x==v?'selected':''}>${esc(x)}</option>`).join('');
-  $('#view').innerHTML=`<div class="filters"><div class="fr"><input type="search" id="q" placeholder="Cerca azienda, fondo, tag, città, vertical…" value="${esc(F.q)}"></div>
+  $('#view').innerHTML=`<div class="filters${FOPEN?' open':''}"><div class="fr"><input type="search" id="q" placeholder="Cerca azienda, fondo, tag, città, vertical…" value="${esc(F.q)}"><button type="button" class="chip fbtn" onclick="FOPEN=!FOPEN;this.closest('.filters').classList.toggle('open',FOPEN)">⚙ Filtri</button></div>
   <div class="fg">${[['fs','sector','Settore','sector'],['fsub','sub','Sottosettore','sub'],['fsi','subInd','Sub-industry','subInd'],['fv','vert','Vertical','vert'],['fo','own','Proprietà','own'],['fi','inv','Fondo','maj'],['fm','min','Fondo minoranza','']].slice(0,4).map(([id,k,l,u])=>`<div class="cb"><input type="text" class="ft" id="${id}" autocomplete="off" placeholder="${l}" title="${l}: scrivi una parte del testo (più voci con ;) o scegli dall'elenco" value="${esc(F[k])}"><span class="cbx" data-for="${id}">⌄</span><div class="cbl" id="l_${id}" hidden></div></div>`).join('')}</div>
   <div class="fg">${[['fs','sector','Settore','sector'],['fsub','sub','Sottosettore','sub'],['fsi','subInd','Sub-industry','subInd'],['fv','vert','Vertical','vert'],['fo','own','Proprietà','own'],['fi','inv','Fondo','maj'],['fm','min','Fondo minoranza','']].slice(4).map(([id,k,l,u])=>`<div class="cb"><input type="text" class="ft" id="${id}" autocomplete="off" placeholder="${l}" title="${l}: scrivi una parte del testo (più voci con ;) o scegli dall'elenco" value="${esc(F[k])}"><span class="cbx" data-for="${id}">⌄</span><div class="cbl" id="l_${id}" hidden></div></div>`).join('')}
   <div class="fc">${[['Y','Cliente: Sì'],['N','Cliente: No'],['?','Cliente: n.d.']].map(([k,l])=>`<span class="chip ${F.ap==k?'on':''}" title="Cliente passato" onclick="F.ap=F.ap=='${k}'?'':'${k}';comp()">${l}</span>`).join('')}
@@ -308,7 +353,7 @@ function comp(){
 function rowsHtml(r){return r.map(c=>{const s=SC[c.id],h=holdY(c);return `<tr class="r" onclick="openC(${c.id})"><td onclick="event.stopPropagation()"><span class="star ${inWl(c.id)?'on':''}" onclick="toggleWl(${c.id})">★</span></td>
   <td><div class="nm">${esc(c.name)}</div><div class="sub">${esc(c.short||'')}</div></td><td>${esc(c.sector||'–')}<div class="sub">${esc([c.sub,c.subInd,c.vert].filter(Boolean).join(' · '))}</div></td><td class="n">${s?badge(s.final):'–'}</td><td>${esc(c.own||'–')}</td><td>${esc(c.maj||'–')}</td>
   <td class="n">${m(c.rev)}</td><td class="n">${m(c.ebitda)}</td><td class="n">${c.ndE==null?'–':n1(c.ndE,1)+'x'}</td><td class="n">${h==null?'–':n1(h,1)+' a'}</td><td>${apBadge(c.id)}</td></tr>`}).join('')}
-function tbl(){const r=sortRows(filt());$('#cnt').textContent=r.length+' aziende';$('#tb').innerHTML=rowsHtml(r.slice(0,300))+(r.length>300?`<tr><td colspan="11" class="sub">Mostrate le prime 300: affina i filtri.</td></tr>`:'')}
+function tbl(){const r=sortRows(filt());$('#cnt').textContent=r.length+' aziende';$('#tb').innerHTML=rowsHtml(r.slice(0,300))+(r.length>300?`<tr><td colspan="11" class="sub">Mostrate le prime 300: affina i filtri.</td></tr>`:'');mobLab()}
 /* ---------- investors ---------- */
 let IF={q:'',hq:'',minP:0,minAP:0},isort={k:'n',d:-1};
 const isrt=k=>{isort.d=isort.k==k?-isort.d:(k=='name'||k=='hq'?1:-1);isort.k=k;itbl()};
@@ -324,7 +369,7 @@ function cbInit(id,optsFn,pick,ro){const inp=$('#'+id),l=$('#l_'+id);
   if(!window._cbdoc2){window._cbdoc2=1;document.addEventListener('mousedown',e=>{if(!e.target.closest('.cb'))cbCloseAll()})}}
 function invV(){
   const hqs=[...new Set(I.map(i=>i.hq).filter(Boolean))].sort();
-  $('#view').innerHTML=`<div class="filters"><div class="fgi"><input type="search" id="iq" placeholder="Cerca fondo…" value="${esc(IF.q)}"><div class="cb"><input type="text" class="ft" id="ihq" autocomplete="off" placeholder="HQ" value="${esc(IF.hq)}" style=""><span class="cbx" data-for="ihq">⌄</span><div class="cbl" id="l_ihq" hidden></div></div><div class="cb"><input type="text" class="ft" id="ip" autocomplete="off" placeholder="Persone conosciute" value="${IF.minP?'≥ '+IF.minP:''}" readonly style="cursor:pointer"><span class="cbx" data-for="ip">⌄</span><div class="cbl" id="l_ip" hidden></div></div><div class="cb"><input type="text" class="ft" id="ia" autocomplete="off" placeholder="Società Cliente passato" value="${IF.minAP?'≥ '+IF.minAP:''}" readonly style="cursor:pointer"><span class="cbx" data-for="ia">⌄</span><div class="cbl" id="l_ia" hidden></div></div>
+  $('#view').innerHTML=`<div class="filters${FOPEN?' open':''}"><div class="fgi"><input type="search" id="iq" placeholder="Cerca fondo…" value="${esc(IF.q)}"><button type="button" class="chip fbtn" onclick="FOPEN=!FOPEN;this.closest('.filters').classList.toggle('open',FOPEN)">⚙ Filtri</button><div class="cb"><input type="text" class="ft" id="ihq" autocomplete="off" placeholder="HQ" value="${esc(IF.hq)}" style=""><span class="cbx" data-for="ihq">⌄</span><div class="cbl" id="l_ihq" hidden></div></div><div class="cb"><input type="text" class="ft" id="ip" autocomplete="off" placeholder="Persone conosciute" value="${IF.minP?'≥ '+IF.minP:''}" readonly style="cursor:pointer"><span class="cbx" data-for="ip">⌄</span><div class="cbl" id="l_ip" hidden></div></div><div class="cb"><input type="text" class="ft" id="ia" autocomplete="off" placeholder="Società Cliente passato" value="${IF.minAP?'≥ '+IF.minAP:''}" readonly style="cursor:pointer"><span class="cbx" data-for="ia">⌄</span><div class="cbl" id="l_ia" hidden></div></div>
   <span class="chip rst" onclick="IF={q:'',hq:'',minP:0,minAP:0};invV()">Azzera filtri</span><span class="sub" id="icnt"></span></div></div>
   <div class="tw"><table><thead><tr>${[['name','Fondo'],['hq','HQ'],['n','Aziende nel DB','n'],['pers','Persone conosciute','n'],['ap','Società Cliente passato','n'],['dry','Dry powder (€m)','n'],['exits','Exit L5Y','n'],['entries','Ingressi L5Y','n']].map(([k,l,n])=>`<th class="${n?'n':''}" onclick="isrt('${k}')">${l}${isort.k==k?(isort.d>0?' ▲':' ▼'):''}</th>`).join('')}<th>Flagship</th><th>Vintage</th><th>ESG</th></tr></thead><tbody id="itb"></tbody></table></div>`;
   $('#iq').oninput=e=>{IF.q=e.target.value;itbl()};const NUMO=['Tutte','≥ 1','≥ 2','≥ 3','≥ 5'],num=v=>parseInt(String(v).replace(/\D/g,''))||0;
@@ -335,7 +380,7 @@ function itbl(){
   const q=IF.q.toLowerCase();
   let r=I.map(i=>({...i,n:C.filter(c=>c.majId==i.id).length,pers:peKnown(i.name),ap:apCount(i.id)})).filter(i=>(!q||i.name.toLowerCase().includes(q))&&tm(i.hq,IF.hq)&&i.pers>=IF.minP&&i.ap>=IF.minAP);
   const k=isort.k;r.sort((a,b)=>{let x=a[k],y=b[k];if(k=='dry'){x=parseFloat(x)||0;y=parseFloat(y)||0}if(typeof x=='string')return x.localeCompare(y)*isort.d;return((x??-1)-(y??-1))*isort.d});
-  $('#icnt').textContent=r.length+' fondi';
+  $('#icnt').textContent=r.length+' fondi';setTimeout(mobLab,0);
   $('#itb').innerHTML=r.map(i=>`<tr class="r" onclick="F.inv=INVN[${i.id}];go('comp')"><td class="nm">${esc(i.name)}<div class="sub">${esc(i.port||'')} aziende italiane</div></td><td>${esc(i.hq||'–')}</td><td class="n">${i.n}</td>
   <td class="n"><a class="lk" onclick="event.stopPropagation();PF.pe=INVN[${i.id}];go('pers')">${i.pers}</a></td><td class="n">${i.ap}</td><td class="n">${esc(i.dry||'–')}</td><td class="n">${i.exits??'–'}</td><td class="n">${i.entries??'–'}</td><td>${esc(i.flag||'–')}</td><td>${esc(i.flagV||'–')}</td><td>${esc(i.esg||'–')}</td></tr>`).join('')}
 /* ---------- watchlist ---------- */
@@ -352,7 +397,7 @@ let PF={q:'',pe:'',min:0,mine:false},PX=null,PADD=false,PEDIT=null;
 function persV(){
   const pes=[...new Set(S.persons.map(p=>p.pe).filter(Boolean))].sort();
   $('#view').innerHTML=`<datalist id="pel">${I.map(i=>`<option value="${esc(i.name)}">`).join('')}</datalist><datalist id="col">${C.map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist>
-  <div class="filters"><div class="fgp"><input type="search" id="pq" placeholder="Cerca nome, ruolo, PE…" value="${esc(PF.q)}"><div class="cb"><input type="text" class="ft" id="ppe" autocomplete="off" placeholder="PE" value="${esc(PF.pe)}" style=""><span class="cbx" data-for="ppe">⌄</span><div class="cbl" id="l_ppe" hidden></div></div><div class="cb"><input type="text" class="ft" id="pmin" autocomplete="off" placeholder="Confidenza" value="${PF.min?'≥ '+PF.min:''}" readonly style="cursor:pointer"><span class="cbx" data-for="pmin">⌄</span><div class="cbl" id="l_pmin" hidden></div></div>
+  <div class="filters${FOPEN?' open':''}"><div class="fgp"><input type="search" id="pq" placeholder="Cerca nome, ruolo, PE…" value="${esc(PF.q)}"><button type="button" class="chip fbtn" onclick="FOPEN=!FOPEN;this.closest('.filters').classList.toggle('open',FOPEN)">⚙ Filtri</button><div class="cb"><input type="text" class="ft" id="ppe" autocomplete="off" placeholder="PE" value="${esc(PF.pe)}" style=""><span class="cbx" data-for="ppe">⌄</span><div class="cbl" id="l_ppe" hidden></div></div><div class="cb"><input type="text" class="ft" id="pmin" autocomplete="off" placeholder="Confidenza" value="${PF.min?'≥ '+PF.min:''}" readonly style="cursor:pointer"><span class="cbx" data-for="pmin">⌄</span><div class="cbl" id="l_pmin" hidden></div></div>
   <span class="chip ${PF.mine?'on':''}" onclick="PF.mine=!PF.mine;persV()">Solo i miei</span><span class="chip rst" onclick="PF={q:'',pe:'',min:0,mine:false};persV()">Azzera</span>
   <button class="btn" style="justify-self:end" onclick="PADD=!PADD;persV()">＋ Nuovo contatto</button></div></div>
   ${PADD?`<div class="form"><input type="text" id="nf" placeholder="Nome"><input type="text" id="nl" placeholder="Cognome"><input type="text" id="nr" placeholder="Ruolo"><input type="text" id="np" list="pel" placeholder="PE / fondo"><input type="text" id="nco" list="col" placeholder="Azienda (opz.)"><input type="text" id="ni" placeholder="Email / telefono (opz.)"><select id="nc">${[3,1,2,4,5].map(n=>`<option value="${n}">Confidenza ${n} – ${CL[n]}</option>`).join('')}</select><button class="btn" onclick="newPers()">Salva</button><div class="sub" style="grid-column:1/-1">Se la persona esiste già (stesso nome e PE), si aggiunge la tua confidenza e il contatto principale resta chi ha il livello più alto.</div></div>`:''}
@@ -363,7 +408,7 @@ function newPers(){const f=$('#nf').value.trim(),l=$('#nl').value.trim();if(!f||
 function ptbl(){
   const q=PF.q.toLowerCase();
   const r=S.persons.map(p=>({p,t:topRel(p.id),n:relsOf(p.id).length,mine:S.rel.find(x=>x.p==p.id&&x.u==S.me)})).filter(({p,t,mine})=>(!q||(p.first+' '+p.last+' '+p.role+' '+p.pe).toLowerCase().includes(q))&&tm(p.pe,PF.pe)&&(t?t.conf:0)>=PF.min&&(!PF.mine||mine)).sort((a,b)=>(b.t?.conf||0)-(a.t?.conf||0)||a.p.last.localeCompare(b.p.last));
-  $('#ptb').innerHTML=r.map(({p,t,n})=>`<tr class="r" onclick="PX=PX==${p.id}?null:${p.id};ptbl()"><td class="nm">${esc(p.last)} ${esc(p.first)}</td><td>${esc(p.role||'–')}</td><td>${esc(p.pe||'–')}</td><td>${p.co!=null?esc(C[p.co].name):'–'}</td><td>${t?esc(S.users[t.u]):'–'}</td><td>${t?dots(t.conf):''}</td><td class="n">${n}</td></tr>`+(PX==p.id?`<tr><td colspan="7" style="background:var(--bg)">${persDet(p)}</td></tr>`:'')).join('')||'<tr><td colspan="7"><div class="empty">Nessun contatto. Usa “Nuovo contatto”.</div></td></tr>'}
+  $('#ptb').innerHTML=r.map(({p,t,n})=>`<tr class="r" onclick="PX=PX==${p.id}?null:${p.id};ptbl()"><td class="nm">${esc(p.last)} ${esc(p.first)}</td><td>${esc(p.role||'–')}</td><td>${esc(p.pe||'–')}</td><td>${p.co!=null?esc(C[p.co].name):'–'}</td><td>${t?esc(S.users[t.u]):'–'}</td><td>${t?dots(t.conf):''}</td><td class="n">${n}</td></tr>`+(PX==p.id?`<tr><td colspan="7" style="background:var(--bg)">${persDet(p)}</td></tr>`:'')).join('')||'<tr><td colspan="7"><div class="empty">Nessun contatto. Usa “Nuovo contatto”.</div></td></tr>';setTimeout(mobLab,0)}
 function editPers(id){PEDIT=id;ptbl()}
 function saveEditPers(id){const p=S.persons.find(x=>x.id==id);if(!p)return;const f=$('#ef').value.trim(),l=$('#el').value.trim();if(!f||!l)return alert('Nome e cognome obbligatori');
   const pe=$('#ep').value.trim(),cn=$('#eco').value.trim(),co=cn?coByName(cn):null;if(cn&&!co)return alert('Azienda non trovata nel DB: scegli dall’elenco o lascia vuoto');
